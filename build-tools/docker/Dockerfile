@@ -172,6 +172,8 @@ RUN apt-get -q update && apt-get -q install --no-install-recommends -y openjdk-8
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+ARG TARGETARCH
+
 ####
 # OpenJDK 11 (but keeps default to JDK8)
 # NOTE: This default only works when Apache Yetus is launched
@@ -181,13 +183,13 @@ RUN apt-get -q update && apt-get -q install --no-install-recommends -y openjdk-8
 RUN apt-get -q update && apt-get -q install --no-install-recommends -y default-jre-headless openjdk-11-jdk-headless \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    && update-java-alternatives -s java-1.8.0-openjdk-amd64 || :
+    && update-java-alternatives -s java-1.8.0-openjdk-$TARGETARCH || :
 # since update alternatives might fail on executables that we don't really need (e.g. appletviewer)
 # and return with exit code <0 (actually: 2), we can simply do a sanity check if the version is
 # as expected for "java" executable after the update and go on
 RUN java -version 2>&1 | grep "1.8.0" && rm -f /usr/lib/jvm/default-java \
-    && ln -s java-8-openjdk-amd64 /usr/lib/jvm/default-java
-ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
+    && ln -s java-8-openjdk-$TARGETARCH /usr/lib/jvm/default-java
+ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-$TARGETARCH
 
 ######
 # Install findbugs
@@ -249,8 +251,8 @@ RUN ln -s /usr/local/bin/pip3 /usr/local/bin/pip
 # Install npm and JSHint
 ###
 # hadolint ignore=DL3008
-RUN curl -sSL https://deb.nodesource.com/setup_14.x | bash - \
-    && apt-get -q install --no-install-recommends -y nodejs \
+RUN apt-get update \
+    && apt-get -q install --no-install-recommends -y nodejs npm \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && npm install -g \
